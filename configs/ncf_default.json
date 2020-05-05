@@ -5,36 +5,40 @@
     "dataset": "ml_100k",
     "data_split": "leave_one_out",
     "percent": 1,
-    "emb_dim": 64,
+    "emb_dim": 32,
     "num_negative": 4,
     "batch_size": 256,
+    "dropout": 0.0,
     "metrics": ["ndcg_at_k", "precision_at_k", "recall_at_k", "map_at_k"],
     "validate_metric": "ndcg_at_k@10",
     "device_str": "gpu",
     "optimizer": "adam",
     "lr": 1e-3,
-    "max_epoch": 20,
+    "max_epoch": 30,
     "result_file": "result.csv",
     "log_dir": "logs/",
     "result_dir": "results/",
     "checkpoint_dir": "checkpoints/",
     "dataset_dir": "datasets/",
     "run_dir": "runs/",
-    "gmf_config": {"name": "gmf", "latent_dim": 32, "save_name": "gmf.model"},
+    "gmf_config": {
+        "name": "gmf",
+        "save_name": "gmf.model"
+    },
     "mlp_config": {
         "name": "mlp",
-        "latent_dim": 32,
-        "layers": [64, 32, 16, 8],
-        "save_name": "mlp.model",
-        "pretrain_gmf": "gmf.model"
+        "n_layers": 3,
+        "save_name": "mlp.model"
     },
     "neumf_config": {
         "name": "ncf",
-        "latent_dim_gmf": 32,
-        "latent_dim_mlp": 32,
-        "layers": [64, 32, 16, 8],
-        "pretrain_gmf": "gmf.model",
-        "pretrain_mlp": "mlp.model",
         "save_name": "ncf.model"
+    },
+    "gcn_config": {
+        "name": "gcn",
+        "mess_dropout": [0.1, 0.1],
+        "layers": [64, 64],
+        "regs": [1e-5],
+        "save_name": "gcn.model"
     }
 }

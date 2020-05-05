@@ -1,24 +1,8 @@
 import torch
 from beta_rec.utils.common_util import print_dict_as_table
 from beta_rec.models.torch_engine import Engine
-from torch_geometric.nn import GCNConv
 import torch.nn.functional as F
 import torch.nn as nn
-
-
-class L2GCN(torch.nn.Module):
-    def __init__(self):
-        super(L2GCN, self).__init__()
-        self.conv1 = GCNConv(dataset.fea_dim, 16)
-        self.conv2 = GCNConv(16, dataset.emb_dim)
-
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index)
-        return F.log_softmax(x, dim=1)
 
 
 class GCN_S(torch.nn.Module):
@@ -32,7 +16,7 @@ class GCN_S(torch.nn.Module):
         self.n_users = config["n_users"]
         self.n_items = config["n_items"]
         self.emb_dim = config["emb_dim"]
-        self.layers = config["layers"]
+        self.layers = config["gcn_config"]["layers"]
         self.n_layers = len(self.layers)
         self.dropout = nn.ModuleList()
         self.u_gcn_weights = nn.ModuleList()
@@ -46,14 +30,14 @@ class GCN_S(torch.nn.Module):
             self.i_gcn_weights.append(nn.Linear(self.layers[i], self.layers[i + 1]))
             self.dropout.append(nn.Dropout(self.dropout_list[i]))
 
-        self.user_embedding = nn.Embedding(self.n_users, self.emb_dim)
-        self.item_embedding = nn.Embedding(self.n_items, self.emb_dim)
+        self.embedding_user = nn.Embedding(self.n_users, self.emb_dim)
+        self.embedding_item = nn.Embedding(self.n_items, self.emb_dim)
         self.init_emb()
 
     def init_emb(self):
         # Initialise users and items' embeddings
-        nn.init.xavier_uniform_(self.user_embedding.weight)
-        nn.init.xavier_uniform_(self.item_embedding.weight)
+        nn.init.normal_(self.embedding_user.weight, std=0.01)
+        nn.init.normal_(self.embedding_user.weight, std=0.01)
 
     def forward(self, user_fea_norm_adj, item_fea_norm_adj):
         """ Perform GNN function on users and item embeddings
@@ -64,8 +48,8 @@ class GCN_S(torch.nn.Module):
             u_embeddings (tensor): processed user embeddings
             i_embeddings (tensor): processed item embeddings
         """
-        u_embeddings = self.user_embedding.weight
-        i_embeddings = self.item_embedding.weight
+        u_embeddings = self.embedding_user.weight
+        i_embeddings = self.embedding_item.weight
 
         for i in range(self.n_layers):
             u_embeddings = torch.sparse.mm(user_fea_norm_adj, u_embeddings)
@@ -93,7 +77,7 @@ class GCN_S(torch.nn.Module):
 
         with torch.no_grad():
             scores = torch.mul(
-                self.user_embedding(users_t), self.item_embedding(items_t)
+                self.embedding_user(users_t), self.embedding_item(items_t)
             ).sum(dim=1)
         return scores
 

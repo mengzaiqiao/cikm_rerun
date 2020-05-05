@@ -1,7 +1,9 @@
 import os
 import torch
+import torch.nn as nn
 from beta_rec.models.gmf import GMF
 from beta_rec.models.mlp import MLP
+from beta_rec.models.gcn import GCN_S
 from beta_rec.models.torch_engine import Engine
 
 
@@ -9,32 +11,36 @@ class NeuMF(torch.nn.Module):
     def __init__(self, config):
         super(NeuMF, self).__init__()
         self.config = config
-        self.num_users = config["n_users"]
-        self.num_items = config["n_items"]
-        self.latent_dim_gmf = config["latent_dim_gmf"]
-        self.latent_dim_mlp = config["latent_dim_mlp"]
+        self.n_users = config["n_users"]
+        self.n_items = config["n_items"]
+        self.emb_dim = config["emb_dim"]
+        self.n_layers = config["mlp_config"]["n_layers"]
+        self.dropout = config["dropout"]
+        self.latent_dim_mlp = self.emb_dim * (2 ** (self.n_layers))
+        self.latent_dim_gmf = self.emb_dim
 
         self.embedding_user_mlp = torch.nn.Embedding(
-            num_embeddings=self.num_users, embedding_dim=self.latent_dim_mlp
+            num_embeddings=self.n_users, embedding_dim=self.latent_dim_mlp
         )
         self.embedding_item_mlp = torch.nn.Embedding(
-            num_embeddings=self.num_items, embedding_dim=self.latent_dim_mlp
+            num_embeddings=self.n_items, embedding_dim=self.latent_dim_mlp
         )
         self.embedding_user_mf = torch.nn.Embedding(
-            num_embeddings=self.num_users, embedding_dim=self.latent_dim_gmf
+            num_embeddings=self.n_users, embedding_dim=self.latent_dim_gmf
         )
         self.embedding_item_mf = torch.nn.Embedding(
-            num_embeddings=self.num_items, embedding_dim=self.latent_dim_gmf
+            num_embeddings=self.n_items, embedding_dim=self.latent_dim_gmf
         )
 
-        self.fc_layers = torch.nn.ModuleList()
-        for idx, (in_size, out_size) in enumerate(
-            zip(config["layers"][:-1], config["layers"][1:])
-        ):
-            self.fc_layers.append(torch.nn.Linear(in_size, out_size))
-
+        MLP_modules = []
+        for i in range(self.n_layers):
+            input_size = self.emb_dim * (2 ** (self.n_layers - i))
+            MLP_modules.append(nn.Dropout(p=self.dropout))
+            MLP_modules.append(nn.Linear(input_size, input_size // 2))
+            MLP_modules.append(nn.ReLU())
+        self.fc_layers = nn.Sequential(*MLP_modules)
         self.affine_output = torch.nn.Linear(
-            in_features=config["layers"][-1] + config["latent_dim_gmf"], out_features=1
+            in_features=self.emb_dim * 2, out_features=1
         )
         self.logistic = torch.nn.Sigmoid()
 
@@ -71,14 +77,12 @@ class NeuMF(torch.nn.Module):
 class NeuMFEngine(Engine):
     """Engine for training & evaluating GMF model"""
 
-    def __init__(self, config, gmf_config=None, mlp_config=None):
+    def __init__(self, config):
+        self.config = config
         self.model = NeuMF(config)
-        self.gmf_config = gmf_config
-        self.mlp_config = mlp_config
         super(NeuMFEngine, self).__init__(config)
         print(self.model)
-        if gmf_config is not None and mlp_config is not None:
-            self.load_pretrain_weights()
+        self.load_pretrain_weights(self.config["pretrain_model"])
 
     def train_single_batch(self, users, items, ratings):
         assert hasattr(self, "model"), "Please specify the exact model !"
@@ -108,32 +112,47 @@ class NeuMFEngine(Engine):
         print("[Training Epoch {}], Loss {}".format(epoch_id, loss))
         self.writer.add_scalar("model/loss", total_loss, epoch_id)
 
-    def load_pretrain_weights(self):
+    def load_pretrain_weights(self, model="gmf"):
         """Loading weights from trained MLP model & GMF model"""
-        mlp_model = MLP(self.mlp_config)
-
+        mlp_model = MLP(self.config)
+        mlp_save_dir = os.path.join(
+            self.config["model_save_dir"], self.config["mlp_config"]["save_name"]
+        )
         self.resume_checkpoint(
-            os.path.join(self.config["model_save_dir"], self.config["pretrain_mlp"]),
-            mlp_model,
+            mlp_save_dir, mlp_model,
         )
 
         self.model.embedding_user_mlp.weight.data = mlp_model.embedding_user.weight.data
         self.model.embedding_item_mlp.weight.data = mlp_model.embedding_item.weight.data
-        #         for idx in range(len(self.fc_layers)):
-        #             self.model.fc_layers[idx].weight.data = mlp_model.fc_layers[idx].weight.data
+        for (m1, m2) in zip(self.model.fc_layers, mlp_model.fc_layers):
+            if isinstance(m1, nn.Linear) and isinstance(m2, nn.Linear):
+                m1.weight.data.copy_(m2.weight)
+                m1.bias.data.copy_(m2.bias)
+        if model == "gmf":
+            gmf_model = GMF(self.config)
+            gmf_save_dir = os.path.join(
+                self.config["model_save_dir"], self.config["gmf_config"]["save_name"]
+            )
+            self.resume_checkpoint(
+                gmf_save_dir, gmf_model,
+            )
+            self.model.embedding_user_mf.weight.data = gmf_model.embedding_user.weight.data
+            self.model.embedding_item_mf.weight.data = gmf_model.embedding_item.weight.data
 
-        gmf_model = GMF(self.gmf_config)
-        self.resume_checkpoint(
-            os.path.join(self.config["model_save_dir"], self.config["pretrain_gmf"]),
-            gmf_model,
-        )
-        self.model.embedding_user_mf.weight.data = gmf_model.embedding_user.weight.data
-        self.model.embedding_item_mf.weight.data = gmf_model.embedding_item.weight.data
-
-        self.model.affine_output.weight.data = 0.5 * torch.cat(
-            [mlp_model.affine_output.weight.data, gmf_model.affine_output.weight.data],
-            dim=-1,
-        )
-        self.model.affine_output.bias.data = 0.5 * (
-            mlp_model.affine_output.bias.data + gmf_model.affine_output.bias.data
-        )
+            self.model.affine_output.weight.data = 0.5 * torch.cat(
+                [mlp_model.affine_output.weight.data, gmf_model.affine_output.weight.data],
+                dim=-1,
+            )
+            self.model.affine_output.bias.data = 0.5 * (
+                mlp_model.affine_output.bias.data + gmf_model.affine_output.bias.data
+            )
+        elif model == "gcn":
+            gcn_model = GCN_S(self.config)
+            gcn_save_dir = os.path.join(
+                self.config["model_save_dir"], self.config["gcn_config"]["save_name"]
+            )
+            self.resume_checkpoint(
+                gcn_save_dir, gcn_model,
+            )
+            self.model.embedding_user_mf.weight.data = gcn_model.embedding_user.weight.data
+            self.model.embedding_item_mf.weight.data = gcn_model.embedding_item.weight.data

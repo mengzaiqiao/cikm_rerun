@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn as nn
 from beta_rec.models.torch_engine import Engine
 
 
@@ -9,17 +10,17 @@ class GMF(torch.nn.Module):
         self.config = config
         self.num_users = config["n_users"]
         self.num_items = config["n_items"]
-        self.latent_dim = config["latent_dim"]
+        self.emb_dim = config["emb_dim"]
 
         self.embedding_user = torch.nn.Embedding(
-            num_embeddings=self.num_users, embedding_dim=self.latent_dim
+            num_embeddings=self.num_users, embedding_dim=self.emb_dim
         )
         self.embedding_item = torch.nn.Embedding(
-            num_embeddings=self.num_items, embedding_dim=self.latent_dim
+            num_embeddings=self.num_items, embedding_dim=self.emb_dim
         )
-
+        self.init_weight()
         self.affine_output = torch.nn.Linear(
-            in_features=self.latent_dim, out_features=1
+            in_features=self.emb_dim, out_features=1
         )
         self.logistic = torch.nn.Sigmoid()
 
@@ -38,7 +39,8 @@ class GMF(torch.nn.Module):
             return self.forward(user_indices, item_indices)
 
     def init_weight(self):
-        pass
+        nn.init.normal_(self.embedding_user.weight, std=0.01)
+        nn.init.normal_(self.embedding_user.weight, std=0.01)
 
 
 class GMFEngine(Engine):
@@ -75,13 +77,3 @@ class GMFEngine(Engine):
             total_loss += loss
         print("[Training Epoch {}], Loss {}".format(epoch_id, total_loss))
         self.writer.add_scalar("model/loss", total_loss, epoch_id)
-
-    def load_pretrain_weights(self):
-        """Loading weights from trained GMF model"""
-        gmf_model = GMF(self.config)
-        self.resume_checkpoint(
-            os.path.join(self.config["model_save_dir"], self.config["save_name"]),
-            gmf_model,
-        )
-        self.model.embedding_user.weight.data = gmf_model.embedding_user.weight.data
-        self.model.embedding_item.weight.data = gmf_model.embedding_item.weight.data
