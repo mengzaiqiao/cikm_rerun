@@ -22,7 +22,7 @@ class GCN_S(torch.nn.Module):
         self.u_gcn_weights = nn.ModuleList()
         self.i_gcn_weights = nn.ModuleList()
         self.layers = [self.emb_dim] + self.layers
-        self.dropout_list = list(config["mess_dropout"])
+        self.dropout_list = list(config["gcn_config"]["mess_dropout"])
         # Create GNN layers
 
         for i in range(self.n_layers):
@@ -89,7 +89,7 @@ class GCN_SEngine(Engine):
         self.config = config
         print_dict_as_table(config, tag="GCN config")
         self.model = GCN_S(config)
-        self.regs = config["regs"]  # reg is the regularisation
+        self.regs = config["gcn_config"]["regs"]  # reg is the regularisation
         self.decay = self.regs[0]
         self.batch_size = config["batch_size"]
         self.num_batch = config["num_batch"]

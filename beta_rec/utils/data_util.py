@@ -274,24 +274,24 @@ class Dataset(object):
             self.n_users = train[DEFAULT_USER_COL].nunique()
             self.n_items = train[DEFAULT_ITEM_COL].nunique()
             users_ser, items_ser = intersect_train_test(train, test)
-        print(f"After intersection, train statistics")
-        print(
-            tabulate(
-                train.agg(["count", "nunique"]),
-                headers=test.columns,
-                tablefmt="psql",
-                disable_numparse=True,
+            print(f"After intersection, train statistics")
+            print(
+                tabulate(
+                    train.agg(["count", "nunique"]),
+                    headers=test.columns,
+                    tablefmt="psql",
+                    disable_numparse=True,
+                )
             )
-        )
-        print(f"After intersection, test statistics")
-        print(
-            tabulate(
-                test.agg(["count", "nunique"]),
-                headers=test.columns,
-                tablefmt="psql",
-                disable_numparse=True,
+            print(f"After intersection, test statistics")
+            print(
+                tabulate(
+                    test.agg(["count", "nunique"]),
+                    headers=test.columns,
+                    tablefmt="psql",
+                    disable_numparse=True,
+                )
             )
-        )
         self.user_pool = users_ser
         self.item_pool = items_ser
 

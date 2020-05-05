@@ -2,8 +2,10 @@
     "model": "ncf",
     "config_id": "default",
     "root_dir": "../",
-    "dataset": "ml_100k",
-    "data_split": "leave_one_out",
+    "dataset": "dunnhumby",
+    "data_split":"temporal",
+    "test_rate":0.2,
+    "n_test":1,
     "percent": 1,
     "emb_dim": 32,
     "num_negative": 4,
@@ -12,7 +14,7 @@
     "metrics": ["ndcg_at_k", "precision_at_k", "recall_at_k", "map_at_k"],
     "validate_metric": "ndcg_at_k@10",
     "device_str": "gpu",
-    "optimizer": "adam",
+    "optimizer": "rmsprop",
     "lr": 1e-3,
     "max_epoch": 30,
     "result_file": "result.csv",
@@ -36,8 +38,8 @@
     },
     "gcn_config": {
         "name": "gcn",
-        "mess_dropout": [0.1, 0.1],
-        "layers": [64, 64],
+        "mess_dropout": [0.0, 0.0],
+        "layers": [64, 32],
         "regs": [1e-5],
         "save_name": "gcn.model"
     }

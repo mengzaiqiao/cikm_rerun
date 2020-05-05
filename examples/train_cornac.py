@@ -1,14 +1,3 @@
-"""
-Created on Aug 5, 2019
-Updated on XX,2019 BY xxx@
-
-Classes describing datasets of user-item interactions. Instances of these
-are returned by dataset fetching and dataset pre-processing functions.
-
-@author: Zaiqiao Meng (zaiqiao.meng@gmail.com)
-
-"""
-
 import numpy as np
 import pandas as pd
 import pickle
@@ -47,18 +36,17 @@ from scipy.sparse import csr_matrix
 import pandas as pd
 
 
-config = {
-    "dataset": "ml_100k",
-    "data_split": "temporal",
-    "result_file": "cornac_result.csv",
-    "root_dir": "../",
-}
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Run cornac model..")
     # If the following settings are specified with command line,
     # these settings will be updated.
+    parser.add_argument(
+        "--config_file",
+        default="../configs/cornac_default.json",
+        nargs="?",
+        type=str,
+        help="Options are: tafeng, dunnhunmby and instacart",
+    )
     parser.add_argument(
         "--dataset",
         nargs="?",
@@ -138,10 +126,16 @@ def my_eval(eval_data_df, model):
 
 
 if __name__ == "__main__":
+    # load config file from json
+    config = {}
     args = parse_args()
     update_args(config, args)
+    with open(config["config_file"]) as config_params:
+        print("loading config file", config["config_file"])
+        json_config = json.load(config_params)
+    json_config.update(config)
+    config = json_config
     root_dir = config["root_dir"]
-
     time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file = (
         root_dir
@@ -183,7 +177,7 @@ if __name__ == "__main__":
     )
 
     vaecf = cornac.models.vaecf.recom_vaecf.VAECF(
-        name="VAECF",
+        name="SVAE",
         k=10,
         autoencoder_structure=[20],
         act_fn="tanh",
@@ -212,7 +206,7 @@ if __name__ == "__main__":
     )
 
     neumf = cornac.models.ncf.recom_neumf.NeuMF(
-        name="NeuMF",
+        name="NCF",
         num_factors=8,
         layers=(64, 32, 16, 8),
         act_fn="relu",
@@ -244,7 +238,7 @@ if __name__ == "__main__":
         data.train["col_rating"].to_numpy(),
     ]
 
-    train_data = cornac.dataset.Dataset(
+    train_data = cornac.data.Dataset(
         num_users,
         num_items,
         uid_map,
@@ -261,6 +255,4 @@ if __name__ == "__main__":
             "'\""
         ) + datetime.now().strftime("_%Y%m%d_%H%M%S")
         model.fit(train_data)
-#         for test_data in test_df_li:
-#             my_eval(test_data, model)
         my_eval(test_df_li[0], model)

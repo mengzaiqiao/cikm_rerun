@@ -16,7 +16,7 @@ class NeuMF(torch.nn.Module):
         self.emb_dim = config["emb_dim"]
         self.n_layers = config["mlp_config"]["n_layers"]
         self.dropout = config["dropout"]
-        self.latent_dim_mlp = self.emb_dim * (2 ** (self.n_layers))
+        self.latent_dim_mlp = self.emb_dim * (2 ** (self.n_layers))//2
         self.latent_dim_gmf = self.emb_dim
 
         self.embedding_user_mlp = torch.nn.Embedding(
@@ -82,7 +82,7 @@ class NeuMFEngine(Engine):
         self.model = NeuMF(config)
         super(NeuMFEngine, self).__init__(config)
         print(self.model)
-        self.load_pretrain_weights(self.config["pretrain_model"])
+        self.load_pretrain_weights(self.config["pretrain"])
 
     def train_single_batch(self, users, items, ratings):
         assert hasattr(self, "model"), "Please specify the exact model !"
@@ -112,8 +112,15 @@ class NeuMFEngine(Engine):
         print("[Training Epoch {}], Loss {}".format(epoch_id, loss))
         self.writer.add_scalar("model/loss", total_loss, epoch_id)
 
-    def load_pretrain_weights(self, model="gmf"):
+    def load_pretrain_weights(self, model=None):
         """Loading weights from trained MLP model & GMF model"""
+        if model is None:
+            nn.init.normal_(self.model.embedding_user_mf.weight, std=0.01)
+            nn.init.normal_(self.model.embedding_item_mf.weight, std=0.01)
+            nn.init.normal_(self.model.embedding_user_mlp.weight, std=0.01)
+            nn.init.normal_(self.model.embedding_user_mlp.weight, std=0.01)
+            return
+
         mlp_model = MLP(self.config)
         mlp_save_dir = os.path.join(
             self.config["model_save_dir"], self.config["mlp_config"]["save_name"]
@@ -136,11 +143,18 @@ class NeuMFEngine(Engine):
             self.resume_checkpoint(
                 gmf_save_dir, gmf_model,
             )
-            self.model.embedding_user_mf.weight.data = gmf_model.embedding_user.weight.data
-            self.model.embedding_item_mf.weight.data = gmf_model.embedding_item.weight.data
+            self.model.embedding_user_mf.weight.data = (
+                gmf_model.embedding_user.weight.data
+            )
+            self.model.embedding_item_mf.weight.data = (
+                gmf_model.embedding_item.weight.data
+            )
 
             self.model.affine_output.weight.data = 0.5 * torch.cat(
-                [mlp_model.affine_output.weight.data, gmf_model.affine_output.weight.data],
+                [
+                    mlp_model.affine_output.weight.data,
+                    gmf_model.affine_output.weight.data,
+                ],
                 dim=-1,
             )
             self.model.affine_output.bias.data = 0.5 * (
@@ -154,5 +168,9 @@ class NeuMFEngine(Engine):
             self.resume_checkpoint(
                 gcn_save_dir, gcn_model,
             )
-            self.model.embedding_user_mf.weight.data = gcn_model.embedding_user.weight.data
-            self.model.embedding_item_mf.weight.data = gcn_model.embedding_item.weight.data
+            self.model.embedding_user_mf.weight.data = (
+                gcn_model.embedding_user.weight.data
+            )
+            self.model.embedding_item_mf.weight.data = (
+                gcn_model.embedding_item.weight.data
+            )
