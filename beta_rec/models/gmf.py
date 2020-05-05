@@ -1,3 +1,4 @@
+import os
 import torch
 from beta_rec.models.torch_engine import Engine
 
@@ -79,7 +80,8 @@ class GMFEngine(Engine):
         """Loading weights from trained GMF model"""
         gmf_model = GMF(self.config)
         self.resume_checkpoint(
-            self.config["model_save_dir"] + self.config["save_name"], gmf_model
+            os.path.join(self.config["model_save_dir"], self.config["save_name"]),
+            gmf_model,
         )
         self.model.embedding_user.weight.data = gmf_model.embedding_user.weight.data
         self.model.embedding_item.weight.data = gmf_model.embedding_item.weight.data

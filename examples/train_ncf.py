@@ -136,7 +136,7 @@ class NCF_train(TrainEngine):
 
         # Train MLP
         self.mlp_engine = MLPEngine(
-            self.config["mlp_config"], gmf_config=self.config["gmf_config"]
+            self.config["mlp_config"]
         )
         self.mlp_save_dir = os.path.join(
             self.config["model_save_dir"], self.config["mlp_config"]["save_name"]

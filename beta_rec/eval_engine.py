@@ -96,6 +96,7 @@ def train_eval_worker(
     Returns:
 
     """
+    testEngine.n_worker += 1
     valid_result = evaluate(valid_df, valid_pred, testEngine.metrics, top_k)
     test_result = evaluate(test_df, test_pred, testEngine.metrics, top_k)
     lock_train_eval.acquire()  # need to be test
@@ -106,7 +107,10 @@ def train_eval_worker(
         > testEngine.best_valid_performance
     ):
         testEngine.n_no_update = 0
-        testEngine.best_performance = valid_result[testEngine.config["validate_metric"]]
+        print(
+            f"Current testEngine.best_valid_performance {testEngine.best_valid_performance}"
+        )
+        testEngine.best_valid_performance = valid_result[testEngine.config["validate_metric"]]
         print_dict_as_table(
             valid_result,
             tag=f"performance on validation at epoch {epoch}",
@@ -114,6 +118,9 @@ def train_eval_worker(
         )
     else:
         testEngine.n_no_update += 1
+        print(f"number of epoches that have no update {testEngine.n_no_update}")
+
+    testEngine.n_worker -= 1
     lock_train_eval.release()
     # lock record and get best performance
     return valid_result, test_result
@@ -172,6 +179,7 @@ class EvalEngine(object):
             pd.DataFrame(config.items(), columns=["parameters", "values"]).to_string(),
             0,
         )
+        self.n_worker = 0
         self.n_no_update = 0
         self.best_valid_performance = 0
         self.tunable = ["model", "dataset"]
@@ -181,6 +189,10 @@ class EvalEngine(object):
         )
         self.init_prometheus_client()
         print("Initializing test engine ...")
+
+    def flush(self):
+        self.n_no_update = 0
+        self.best_valid_performance = 0
 
     def predict(self, data_df, model):
         """ Make prediction for a trained model

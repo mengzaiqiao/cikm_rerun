@@ -1,7 +1,8 @@
-import os
 import torch
-from beta_rec.models.gmf import GMF
+import os
+from beta_rec.models.gcn import GCN_S
 from beta_rec.models.torch_engine import Engine
+from beta_rec.utils.common_util import print_dict_as_table
 
 
 class MLP(torch.nn.Module):
@@ -10,23 +11,23 @@ class MLP(torch.nn.Module):
         self.config = config
         self.num_users = config["n_users"]
         self.num_items = config["n_items"]
-        self.latent_dim = config["latent_dim"]
-
+        self.emb_dim = config["emb_dim"]
+        self.layers = [self.emb_dim * 2] + config["layers"]
         self.embedding_user = torch.nn.Embedding(
-            num_embeddings=self.num_users, embedding_dim=self.latent_dim
+            num_embeddings=self.num_users, embedding_dim=self.emb_dim
         )
         self.embedding_item = torch.nn.Embedding(
-            num_embeddings=self.num_items, embedding_dim=self.latent_dim
+            num_embeddings=self.num_items, embedding_dim=self.emb_dim
         )
 
         self.fc_layers = torch.nn.ModuleList()
         for idx, (in_size, out_size) in enumerate(
-            zip(config["layers"][:-1], config["layers"][1:])
+            zip(self.layers[:-1], self.layers[1:])
         ):
             self.fc_layers.append(torch.nn.Linear(in_size, out_size))
 
         self.affine_output = torch.nn.Linear(
-            in_features=config["layers"][-1], out_features=1
+            in_features=self.layers[-1], out_features=1
         )
         self.logistic = torch.nn.Sigmoid()
 
@@ -58,12 +59,13 @@ class MLP(torch.nn.Module):
 class MLPEngine(Engine):
     """Engine for training & evaluating GMF model"""
 
-    def __init__(self, config, gmf_config=None):
+    def __init__(self, config, gcn_config=None):
         self.model = MLP(config)
-        self.gmf_config = gmf_config
+        print_dict_as_table(config, tag="MLP config")
+        self.gcn_config = gcn_config
         super(MLPEngine, self).__init__(config)
         self.model.to(self.device)
-        if gmf_config is not None:
+        if gcn_config is not None:
             self.load_pretrain_weights()
 
     def train_single_batch(self, users, items, ratings):
@@ -96,10 +98,10 @@ class MLPEngine(Engine):
 
     def load_pretrain_weights(self):
         """Loading weights from trained GMF model"""
-        gmf_model = GMF(self.gmf_config)
+        gcn_model = GCN_S(self.gcn_config)
         self.resume_checkpoint(
-            os.path.join(self.config["model_save_dir"], self.config["pretrain_gmf"]),
-            gmf_model,
+            os.path.join(self.config["model_save_dir"], self.config["pretrain_gcn"]),
+            gcn_model,
         )
-        self.model.embedding_user.weight.data = gmf_model.embedding_user.weight.data
-        self.model.embedding_item.weight.data = gmf_model.embedding_item.weight.data
+        self.model.embedding_user.weight.data = gcn_model.user_embedding.weight.data
+        self.model.embedding_item.weight.data = gcn_model.item_embedding.weight.data

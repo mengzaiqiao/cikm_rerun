@@ -1,8 +1,9 @@
-import os
 import torch
-from beta_rec.models.gmf import GMF
-from beta_rec.models.mlp import MLP
+import os
+from beta_rec.models.gcn import GCN_S
+from beta_rec.models.mlp_gnn import MLP
 from beta_rec.models.torch_engine import Engine
+from beta_rec.utils.common_util import print_dict_as_table
 
 
 class NeuMF(torch.nn.Module):
@@ -11,8 +12,9 @@ class NeuMF(torch.nn.Module):
         self.config = config
         self.num_users = config["n_users"]
         self.num_items = config["n_items"]
-        self.latent_dim_gmf = config["latent_dim_gmf"]
-        self.latent_dim_mlp = config["latent_dim_mlp"]
+        self.latent_dim_gcn = config["emb_dim"]
+        self.latent_dim_mlp = config["emb_dim"]
+        self.layers = [config["emb_dim"] * 2] + config["layers"]
 
         self.embedding_user_mlp = torch.nn.Embedding(
             num_embeddings=self.num_users, embedding_dim=self.latent_dim_mlp
@@ -21,20 +23,20 @@ class NeuMF(torch.nn.Module):
             num_embeddings=self.num_items, embedding_dim=self.latent_dim_mlp
         )
         self.embedding_user_mf = torch.nn.Embedding(
-            num_embeddings=self.num_users, embedding_dim=self.latent_dim_gmf
+            num_embeddings=self.num_users, embedding_dim=self.latent_dim_gcn
         )
         self.embedding_item_mf = torch.nn.Embedding(
-            num_embeddings=self.num_items, embedding_dim=self.latent_dim_gmf
+            num_embeddings=self.num_items, embedding_dim=self.latent_dim_gcn
         )
 
         self.fc_layers = torch.nn.ModuleList()
         for idx, (in_size, out_size) in enumerate(
-            zip(config["layers"][:-1], config["layers"][1:])
+            zip(self.layers[:-1], self.layers[1:])
         ):
             self.fc_layers.append(torch.nn.Linear(in_size, out_size))
 
         self.affine_output = torch.nn.Linear(
-            in_features=config["layers"][-1] + config["latent_dim_gmf"], out_features=1
+            in_features=config["layers"][-1] + self.latent_dim_gcn, out_features=1
         )
         self.logistic = torch.nn.Sigmoid()
 
@@ -71,13 +73,14 @@ class NeuMF(torch.nn.Module):
 class NeuMFEngine(Engine):
     """Engine for training & evaluating GMF model"""
 
-    def __init__(self, config, gmf_config=None, mlp_config=None):
+    def __init__(self, config, gcn_config=None, mlp_config=None):
         self.model = NeuMF(config)
-        self.gmf_config = gmf_config
+        print_dict_as_table(config, tag="Neumf config")
+        self.gcn_config = gcn_config
         self.mlp_config = mlp_config
         super(NeuMFEngine, self).__init__(config)
         print(self.model)
-        if gmf_config is not None and mlp_config is not None:
+        if gcn_config is not None and mlp_config is not None:
             self.load_pretrain_weights()
 
     def train_single_batch(self, users, items, ratings):
@@ -110,30 +113,18 @@ class NeuMFEngine(Engine):
 
     def load_pretrain_weights(self):
         """Loading weights from trained MLP model & GMF model"""
-        mlp_model = MLP(self.mlp_config)
+        gcn_model = GCN_S(self.gcn_config)
+        self.resume_checkpoint(
+            os.path.join(self.config["model_save_dir"], self.config["pretrain_gcn"]),
+            gcn_model,
+        )
+        self.model.embedding_user_mf.weight.data = gcn_model.user_embedding.weight.data
+        self.model.embedding_item_mf.weight.data = gcn_model.item_embedding.weight.data
 
+        mlp_model = MLP(self.mlp_config)
         self.resume_checkpoint(
             os.path.join(self.config["model_save_dir"], self.config["pretrain_mlp"]),
             mlp_model,
         )
-
         self.model.embedding_user_mlp.weight.data = mlp_model.embedding_user.weight.data
         self.model.embedding_item_mlp.weight.data = mlp_model.embedding_item.weight.data
-        #         for idx in range(len(self.fc_layers)):
-        #             self.model.fc_layers[idx].weight.data = mlp_model.fc_layers[idx].weight.data
-
-        gmf_model = GMF(self.gmf_config)
-        self.resume_checkpoint(
-            os.path.join(self.config["model_save_dir"], self.config["pretrain_gmf"]),
-            gmf_model,
-        )
-        self.model.embedding_user_mf.weight.data = gmf_model.embedding_user.weight.data
-        self.model.embedding_item_mf.weight.data = gmf_model.embedding_item.weight.data
-
-        self.model.affine_output.weight.data = 0.5 * torch.cat(
-            [mlp_model.affine_output.weight.data, gmf_model.affine_output.weight.data],
-            dim=-1,
-        )
-        self.model.affine_output.bias.data = 0.5 * (
-            mlp_model.affine_output.bias.data + gmf_model.affine_output.bias.data
-        )

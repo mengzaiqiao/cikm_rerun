@@ -8,7 +8,11 @@ import scipy.sparse as sp
 from beta_rec.utils.common_util import get_random_rep, ensureDir
 from beta_rec.utils.aliasTable import AliasTable
 from beta_rec.utils.triple_sampler import Sampler
-from beta_rec.datasets.data_load import load_split_dataset, load_item_fea_dic
+from beta_rec.datasets.data_load import (
+    load_split_dataset,
+    load_item_fea_dic,
+    load_user_item_feature,
+)
 from beta_rec.utils.constants import (
     DEFAULT_USER_COL,
     DEFAULT_ITEM_COL,
@@ -194,24 +198,6 @@ class Dataset(object):
             load_save=load_save,
         )
         return my_sampler.sample()
-
-    def make_sim_mat(self, user_feat, item_feat):
-        """ Note that the first column is the user/item ID
-
-        """
-        user_feat_dic = get_feat_dic(user_feat)
-        item_feat_dic = get_feat_dic(item_feat)
-        user_feat = []
-        for i in range(self.n_users):
-            user_feat.append(user_feat_dic[self.id2user[i]])
-        item_feat = []
-        for i in range(self.n_items):
-            item_feat.append(item_feat_dic[self.id2item[i]])
-        user_feat = np.stack(user_feat)
-        item_feat = np.stack(item_feat)
-        self.user_sim_mat = calc_sim(user_feat)
-        self.item_sim_mat = calc_sim(item_feat)
-        return self.user_sim_mat, self.item_sim_mat
 
     def generate_train_data(self):
         """ Generate a rating matrix for interactions
@@ -531,18 +517,7 @@ class Dataset(object):
         Return:
             Different types of adjacment matrix
         """
-        self.n_train = 0
-        self.train_items = {}
-        self.R = sp.dok_matrix((self.n_users, self.n_items), dtype=np.float32)
-        user_np = np.array(self.train[DEFAULT_USER_COL])
-        item_np = np.array(self.train[DEFAULT_ITEM_COL])
-        for u in range(self.n_users):
-            index = list(np.where(user_np == u)[0])
-            i = item_np[index]
-            self.train_items[u] = i
-            for item in i:
-                self.R[u, item] = 1
-                self.n_train += 1
+        self.init_train_items()
 
         process_file_name = (
             "ngcf_" + self.config["dataset"] + ("_" + str(self.config["percent"] * 100))
@@ -574,6 +549,39 @@ class Dataset(object):
                 os.path.join(process_file_name, "s_mean_adj_mat.npz"), mean_adj_mat
             )
         return adj_mat, norm_adj_mat, mean_adj_mat
+
+    def load_user_item_fea(self):
+        """ Load user and item features from datasets.
+
+        Returns:
+
+        """
+        print("Load user and item features from datasets")
+        user_feat, item_feat = load_user_item_feature(self.config)
+        user_feat_li = [None for i in range(self.n_users)]
+        item_feat_li = [None for i in range(self.n_items)]
+        for user in user_feat:
+            if user[0] in self.user2id:
+                user_feat_li[self.user2id[user[0]]] = user[1:]
+        for item in item_feat:
+            if item[0] in self.item2id:
+                item_feat_li[self.item2id[item[0]]] = item[1:]
+        self.user_feat = np.stack(user_feat_li)
+        self.item_feat = np.stack(item_feat_li)
+
+    def make_fea_sim_mat(self):
+        """ Note that the first column is the user/item ID
+        Returns
+            normalized_adj_single
+        """
+        self.load_user_item_fea()
+        self.init_train_items()
+        user_sim_mat = sp.csr_matrix(calc_sim(self.user_feat))
+        item_sim_mat = sp.csr_matrix(calc_sim(self.item_feat))
+        return (
+            normalized_adj_single(user_sim_mat + sp.eye(user_sim_mat.shape[0])),
+            normalized_adj_single(item_sim_mat + sp.eye(item_sim_mat.shape[0])),
+        )
 
     def create_adj_mat(self):
         """ Create adjacent matirx from the user-item interaction matrix
@@ -678,3 +686,17 @@ class Dataset(object):
         pos_items = np.array(self.all_train_pos_items)[perm]
         neg_items = np.array(neg_items)[perm]
         return users, pos_items, neg_items
+
+    def init_train_items(self):
+        self.n_train = 0
+        self.train_items = {}
+        self.R = sp.dok_matrix((self.n_users, self.n_items), dtype=np.float32)
+        user_np = np.array(self.train[DEFAULT_USER_COL])
+        item_np = np.array(self.train[DEFAULT_ITEM_COL])
+        for u in range(self.n_users):
+            index = list(np.where(user_np == u)[0])
+            i = item_np[index]
+            self.train_items[u] = i
+            for item in i:
+                self.R[u, item] = 1
+                self.n_train += 1

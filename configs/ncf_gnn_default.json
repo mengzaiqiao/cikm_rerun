@@ -1,0 +1,43 @@
+{
+    "model": "GCN",
+    "config_id": "default",
+    "root_dir": "../",
+    "dataset": "ml_100k",
+    "data_split": "leave_one_out",
+    "batch_size": 256,
+    "num_negative": 4,
+    "lr": 1e-3,
+    "device": "gpu",
+    "optimizer": "adam",
+    "emb_dim": 32,
+    "max_epoch": 20,
+    "result_file": "gcn.csv",
+    "log_dir": "logs/",
+    "result_dir": "results/",
+    "checkpoint_dir": "checkpoints/",
+    "dataset_dir": "datasets/",
+    "process_dir": "processes/",
+    "run_dir": "runs/",
+    "metrics": ["ndcg_at_k", "precision_at_k", "recall_at_k", "map_at_k"],
+    "validate_metric": "ndcg_at_k@10",
+    "gcn_config": {
+        "name": "gcn",
+        "mess_dropout": [0.1, 0.1],
+        "layers": [64, 64],
+        "regs": [1e-5],
+        "save_name": "gcn.model"
+    },
+    "mlp_config": {
+        "name": "mlp",
+        "layers": [32, 16, 8],
+        "save_name": "mlp.model",
+        "pretrain_gcn": "gcn.model"
+    },
+    "neumf_config": {
+        "name": "ncf",
+        "layers": [32, 16, 8],
+        "pretrain_gcn": "gcn.model",
+        "pretrain_mlp": "mlp.model",
+        "save_name": "ncf.model"
+    }
+}

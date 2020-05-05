@@ -89,3 +89,26 @@ def load_split_dataset(config):
     }
     dataset = dataset_mapping[config["dataset"]]()
     return dataset.load_split(config)
+
+def load_user_item_feature(config):
+    """Loading features of users and items
+
+    Args:
+        config (dict): Dictionary of configuration
+
+    Returns:
+        user_feat (numpy.ndarray): The first column is the user id, rest column are feat vectors
+        item_feat (numpy.ndarray): The first column is the itm id, rest column are feat vectors
+
+    """
+    dataset_mapping = {
+        "ml_100k": Movielens_100k,
+        "ml_1m": Movielens_1m,
+        "ml_25m": Movielens_25m,
+        "last_fm": LastFM,
+        "tafeng": Tafeng,
+        "epinions": Epinions,
+        "dunnhumby": Dunnhumby,
+    }
+    dataset = dataset_mapping[config["dataset"]]()
+    return dataset.load_fea_vec()
