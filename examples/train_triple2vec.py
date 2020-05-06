@@ -53,6 +53,9 @@ def parse_args():
         "--use_bias", nargs="?", type=int, help="",
     )
     parser.add_argument(
+        "--device", nargs="?", type=str, help="",
+    )
+    parser.add_argument(
         "--emb_dim", nargs="?", type=int, help="Dimension of the embedding."
     )
     parser.add_argument("--lr", nargs="?", type=float, help="Initialize learning rate.")
