@@ -43,6 +43,9 @@ class VBCAR(nn.Module):
     def init_feature(self, user_fea, item_fea):
         self.user_fea = user_fea
         self.item_fea = item_fea
+        self.initrange = 0.5 / self.emb_dim
+        nn.init.uniform_(self.user_fea.weight, -self.initrange, self.initrange)
+        nn.init.uniform_(self.item_fea.weight, -self.initrange, self.initrange)
         self.user_fea_dim = user_fea.embedding_dim
         self.item_fea_dim = item_fea.embedding_dim
 
@@ -50,19 +53,19 @@ class VBCAR(nn.Module):
         x = self.user_fea(index)
         mu = self.fc_u_2_mu(self.act(self.fc_u_1_mu(x)))
         std = self.fc_u_2_std(self.act(self.fc_u_1_std(x)))
-        return mu, std
+        return x, x
 
     def item_encode(self, index):
         x = self.item_fea(index)
         mu = self.fc_i_2_mu(self.act(self.fc_i_1_mu(x)))
         std = self.fc_i_2_std(self.act(self.fc_i_1_std(x)))
-        return mu, std
+        return x, x
 
     def reparameterize(self, gaussian):
         mu, std = gaussian
         std = torch.exp(0.5 * std)
         eps = torch.randn_like(std)
-        return mu + eps * std
+        return mu
 
     """
     D_KL
@@ -72,7 +75,7 @@ class VBCAR(nn.Module):
         mean1, std1 = dis1
         if dis2 is None:
             mean2 = torch.zeros(mean1.size(), device=self.device)
-            std2 = torch.ones(std1.size(), device=self.device)
+            std2 = torch.ones(mean1.size(), device=self.device) * self.initrange
         else:
             mean2, std2 = dis2
         var1 = std1.pow(2) + self.esp
@@ -148,7 +151,7 @@ class VBCAR(nn.Module):
 
         i_2_score = -1 * (torch.sum(i_2_pos_score) + torch.sum(i_2_neg_score))
 
-        GEN = (u_score + i_1_score + i_2_score) / self.batch_size
+        GEN = (u_score + i_1_score + i_2_score) / (3 * self.batch_size)
         KLD = (
             self.kl_div(pos_u_dis)
             + self.kl_div(pos_i_1_dis)
@@ -158,7 +161,7 @@ class VBCAR(nn.Module):
             + self.kl_div(neg_i_2_dis)
         ) / self.batch_size
         self.kl_loss = KLD.item()
-        #         return GEN/ (3 * self.batch_size)
+        # return GEN
         return (1 - self.alpha) * (GEN) + (self.alpha * KLD)
 
     def predict(self, users, items):

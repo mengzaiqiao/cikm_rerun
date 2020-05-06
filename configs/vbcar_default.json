@@ -21,7 +21,7 @@
     "feature_type": "random",
     "activator": "tanh",
     "activator_comment": "options: relu, prelu, lrelu, tanh, sigmoid",
-    "optimizer": "rmsprop",
+    "optimizer": "adam",
     "optimizer_comment": "options:adam, rmsprop",
     "lr": 0.001,
     "lr_comment": "options:0.0001, 0.0025, 0.005, 0.01",

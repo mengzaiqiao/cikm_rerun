@@ -3,6 +3,7 @@ import sys
 sys.path.append("../")
 
 import argparse
+import os
 import math
 from ray import tune
 from beta_rec.train_engine import TrainEngine, print_dict_as_table
