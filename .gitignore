@@ -33,6 +33,7 @@ coverage.xml
 .pytest_cache/
 logs/
 results/
+processes/
 checkpoints/
 datasets/
 !beta_rec/datasets/
