@@ -20,6 +20,7 @@ class NGCF(torch.nn.Module):
         self.n_layers = len(self.layer_size)
         self.dropout = nn.ModuleList()
         self.GC_weights = nn.ModuleList()
+        self.device = torch.device(self.config["device_str"])
         self.Bi_weights = nn.ModuleList()
         self.dropout_list = list(config["mess_dropout"])
         self.layer_size = [self.emb_dim] + self.layer_size
@@ -102,6 +103,7 @@ class NGCFEngine(Engine):
         self.model = NGCF(config)
         self.regs = config["regs"]  # reg is the regularisation
         self.decay = self.regs[0]
+        self.device = torch.device(self.config["device_str"])
         self.batch_size = config["batch_size"]
         self.norm_adj = config["norm_adj"]
         self.num_batch = config["num_batch"]

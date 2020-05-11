@@ -161,6 +161,7 @@ class VBCAR(nn.Module):
             + self.kl_div(neg_i_2_dis)
         ) / self.batch_size
         self.kl_loss = KLD.item()
+        self.rec_loss = GEN.item()
         # return GEN
         return (1 - self.alpha) * (GEN) + (self.alpha * KLD)
 
@@ -210,6 +211,7 @@ class VBCAREngine(Engine):
         self.model.train()
         total_loss = 0
         kl_loss = 0
+        rec_loss = 0
         #         with autograd.detect_anomaly():
         for batch_id, sample in enumerate(train_loader):
             assert isinstance(sample, torch.Tensor)
@@ -241,12 +243,14 @@ class VBCAREngine(Engine):
             loss = self.train_single_batch(batch_data)
             total_loss += loss
             kl_loss += self.model.kl_loss
+            rec_loss += self.model.rec_loss
         total_loss = total_loss / self.config["batch_size"]
+        rec_loss = rec_loss / self.config["batch_size"]
         kl_loss = kl_loss / self.config["batch_size"]
         print(
             "[Training Epoch {}], log_like_loss {} kl_loss: {} alpha: {} lr: {}".format(
                 epoch_id,
-                total_loss - kl_loss,
+                rec_loss,
                 kl_loss,
                 self.model.alpha,
                 self.config["lr"],

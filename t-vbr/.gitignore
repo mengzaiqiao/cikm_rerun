@@ -1,0 +1,8 @@
+./embedding/
+./sample/
+./result/
+./log/
+__pycache__/
+*.log
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/

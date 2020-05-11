@@ -166,7 +166,7 @@ class Dataset(object):
             self.train[DEFAULT_USER_COL].value_counts().to_dict()
         )
 
-    def sample_triple(self, dump=True, load_save=True):
+    def sample_triple(self, dump=True, load_save=False):
         """
         Sample triples or load triples samples from files. Only applicable for basket based Recommender
         Returns:
@@ -176,12 +176,18 @@ class Dataset(object):
         sample_file_name = (
             "triple_"
             + self.config["dataset"]
-            + ("_" + str(self.config["percent"] * 100))
-            if "percent" in self.config
-            else ""
+            + (
+                ("_" + str(self.config["percent"] * 100))
+                if "percent" in self.config
+                else ""
+            )
             + "_"
             + str(self.config["n_sample"])
-            + ("_" + str(self.config["temp_train"]))
+            + (
+                "_" + str(self.config["temp_train"])
+                if "temp_train" in self.config
+                else ""
+            )
             if "percent" in self.config
             else "" + ".csv"
         )
@@ -520,15 +526,20 @@ class Dataset(object):
         self.init_train_items()
 
         process_file_name = (
-            "ngcf_" + self.config["dataset"] + ("_" + str(self.config["percent"] * 100))
+            "ngcf_"
+            + self.config["dataset"]
+            + "_" 
+            + self.config["data_split"]
+            + (("_" + str(self.config["percent"] * 100))
             if "percent" in self.config
-            else ""
+            else "")
         )
         self.process_path = os.path.join(
             self.config["root_dir"], self.config["process_dir"]
         )
         process_file_name = os.path.join(self.process_path, process_file_name)
         ensureDir(process_file_name)
+        print(process_file_name)
         try:
             t1 = time()
             adj_mat = sp.load_npz(os.path.join(process_file_name, "s_adj_mat.npz"))

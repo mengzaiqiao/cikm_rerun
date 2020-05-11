@@ -145,7 +145,7 @@ class TrainEngine(object):
         self.monitor = None
         self.engine = None
         self.config = prepare_env(config)
-        self.gpu_id, self.config["device_str"] = get_device()
+        self.gpu_id, self.config["device_str"] = get_device() if self.config["device"] == "gpu" else (None, "cpu")
         self.eval_engine = EvalEngine(self.config)
 
     def load_dataset(self):

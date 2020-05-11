@@ -146,7 +146,7 @@ def test_eval_worker(testEngine, eval_data_df, prediction, k_li=[5, 10, 20]):
     if "late_dim" in testEngine.config:
         result_para["late_dim"] = [int(testEngine.config["late_dim"])]
     if "alpha" in testEngine.config:
-        result_para["alpha"] = [int(testEngine.config["alpha"])]
+        result_para["alpha"] = [testEngine.config["alpha"]]
     if "activator" in testEngine.config:
         result_para["activator"] = [testEngine.config["activator"]]
 

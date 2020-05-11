@@ -33,6 +33,10 @@ def parse_args():
     parser.add_argument(
         "--emb_dim", nargs="?", type=int, help="Dimension of the embedding."
     )
+    parser.add_argument(
+        "--dataset", nargs="?", type=str, help="dataset."
+    )
+    parser.add_argument("--device", nargs="?", type=str, help="device .")
     parser.add_argument("--lr", nargs="?", type=float, help="Initialize learning rate.")
     parser.add_argument("--max_epoch", nargs="?", type=int, help="Number of max epoch.")
 

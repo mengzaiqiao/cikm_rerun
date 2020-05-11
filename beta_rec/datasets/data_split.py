@@ -166,7 +166,7 @@ def feed_neg_sample(data, negative_num, item_sampler):
         {DEFAULT_USER_COL: [], DEFAULT_ITEM_COL: [], DEFAULT_RATING_COL: []},
         dtype=np.long,
     )
-    for index, user_items in interact_status.iterrows():
+    for index, user_items in tqdm(interact_status.iterrows()):
         u = int(user_items[DEFAULT_USER_COL])
         items = set(user_items[DEFAULT_ITEM_COL])  # item set for user u
         item_li = list(items)
@@ -178,15 +178,8 @@ def feed_neg_sample(data, negative_num, item_sampler):
         # filter the positive items and truncate the first negative_num
         df_items = np.append(item_li, sample_neg_items)
         df_users = np.array([u] * (negative_num + n_items), dtype=np.long)
-        df_scores = []
+        df_scores = np.ones(len(item_li), dtype=np.long)
         # get the rating scores.
-        for item in item_li:
-            df_scores.append(
-                data.loc[
-                    (data[DEFAULT_USER_COL] == u) & (data[DEFAULT_ITEM_COL] == item),
-                    DEFAULT_RATING_COL,
-                ].to_numpy()[0]
-            )
         df_zeros = np.zeros(negative_num, dtype=np.long)
         ratings = np.append(df_scores, df_zeros)
 
