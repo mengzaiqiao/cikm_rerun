@@ -421,7 +421,7 @@ class DatasetBase(object):
 
         if data is None:
             data = self.load_interaction()
-            data = filter_user_item_order(data, min_u_c=10, min_o_c=10, min_i_c=10)
+            # data = filter_user_item_order(data, min_u_c=10, min_o_c=10, min_i_c=10)
 
         if not isinstance(data, pd.DataFrame):
             raise RuntimeError("data is not a type of DataFrame")

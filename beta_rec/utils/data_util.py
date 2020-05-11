@@ -165,6 +165,8 @@ class Dataset(object):
         self.user_sampler = AliasTable(
             self.train[DEFAULT_USER_COL].value_counts().to_dict()
         )
+        self.init_item_fea()
+        self.init_user_fea()
 
     def sample_triple(self, dump=True, load_save=False):
         """
@@ -355,11 +357,12 @@ class Dataset(object):
             )
         return df
 
-    def init_item_fea(self, config):
+    def init_item_fea(self):
         """
         initialize item feature
 
         """
+        config = self.config
         if "item_fea_type" in config:
             fea_type = config["item_fea_type"]
         else:
@@ -528,11 +531,13 @@ class Dataset(object):
         process_file_name = (
             "ngcf_"
             + self.config["dataset"]
-            + "_" 
+            + "_"
             + self.config["data_split"]
-            + (("_" + str(self.config["percent"] * 100))
-            if "percent" in self.config
-            else "")
+            + (
+                ("_" + str(self.config["percent"] * 100))
+                if "percent" in self.config
+                else ""
+            )
         )
         self.process_path = os.path.join(
             self.config["root_dir"], self.config["process_dir"]

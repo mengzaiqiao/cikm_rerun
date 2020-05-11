@@ -33,39 +33,38 @@ class VBCAR(nn.Module):
     def init_layers(self):
         self.fc_u_1_mu = nn.Linear(self.user_fea_dim, self.late_dim)
         self.fc_u_2_mu = nn.Linear(self.late_dim, self.emb_dim)
-        self.fc_u_1_std = nn.Linear(self.user_fea_dim, self.late_dim)
         self.fc_u_2_std = nn.Linear(self.late_dim, self.emb_dim)
         self.fc_i_1_mu = nn.Linear(self.item_fea_dim, self.late_dim)
         self.fc_i_2_mu = nn.Linear(self.late_dim, self.emb_dim)
-        self.fc_i_1_std = nn.Linear(self.item_fea_dim, self.late_dim)
         self.fc_i_2_std = nn.Linear(self.late_dim, self.emb_dim)
 
     def init_feature(self, user_fea, item_fea):
         self.user_fea = user_fea
         self.item_fea = item_fea
-        self.initrange = 0.5 / self.emb_dim
-        nn.init.uniform_(self.user_fea.weight, -self.initrange, self.initrange)
-        nn.init.uniform_(self.item_fea.weight, -self.initrange, self.initrange)
-        self.user_fea_dim = user_fea.embedding_dim
-        self.item_fea_dim = item_fea.embedding_dim
+        self.user_fea_dim = user_fea.size()[1]
+        self.item_fea_dim = item_fea.size()[1]
 
     def user_encode(self, index):
-        x = self.user_fea(index)
-        mu = self.fc_u_2_mu(self.act(self.fc_u_1_mu(x)))
-        std = self.fc_u_2_std(self.act(self.fc_u_1_std(x)))
-        return x, x
+        x = self.user_fea[index]
+        x = self.act(self.fc_u_1_mu(x))
+        mu = self.fc_u_2_mu(x)
+        std = self.fc_u_2_std(x)
+        std = torch.sigmoid(std)
+        return mu, std
 
     def item_encode(self, index):
-        x = self.item_fea(index)
-        mu = self.fc_i_2_mu(self.act(self.fc_i_1_mu(x)))
-        std = self.fc_i_2_std(self.act(self.fc_i_1_std(x)))
-        return x, x
+        x = self.item_fea[index]
+        x = self.act(self.fc_i_1_mu(x))
+        mu = self.fc_i_2_mu(x)
+        std = self.fc_i_2_std(x)
+        return mu, std
 
     def reparameterize(self, gaussian):
         mu, std = gaussian
         std = torch.exp(0.5 * std)
         eps = torch.randn_like(std)
-        return mu
+        return mu + std * eps
+        # return mu
 
     """
     D_KL
@@ -74,8 +73,9 @@ class VBCAR(nn.Module):
     def kl_div(self, dis1, dis2=None, neg=False):
         mean1, std1 = dis1
         if dis2 is None:
+            initrange = 0.5 / mean1.size()[1]
             mean2 = torch.zeros(mean1.size(), device=self.device)
-            std2 = torch.ones(mean1.size(), device=self.device) * self.initrange
+            std2 = torch.ones(mean1.size(), device=self.device) * initrange
         else:
             mean2, std2 = dis2
         var1 = std1.pow(2) + self.esp
@@ -181,17 +181,12 @@ class VBCAREngine(Engine):
     def __init__(self, config):
         self.config = config
         self.model = VBCAR(config)
-        if config["feature_type"] == "random":
-            user_fea = nn.Embedding(config["n_users"], self.config["late_dim"]).to(
-                torch.device(self.config["device_str"])
-            )
-            item_fea = nn.Embedding(config["n_items"], self.config["late_dim"]).to(
-                torch.device(self.config["device_str"])
-            )
-        else:
-            pass
-            # todo
-            # user_fea, item_fea load feature
+        user_fea = torch.tensor(
+            config["user_fea"], device=config["device_str"], dtype=torch.float32
+        )
+        item_fea = torch.tensor(
+            config["item_fea"], device=config["device_str"], dtype=torch.float32
+        )
         self.model.init_feature(user_fea, item_fea)
         self.model.init_layers()
         super(VBCAREngine, self).__init__(config)
@@ -249,11 +244,7 @@ class VBCAREngine(Engine):
         kl_loss = kl_loss / self.config["batch_size"]
         print(
             "[Training Epoch {}], log_like_loss {} kl_loss: {} alpha: {} lr: {}".format(
-                epoch_id,
-                rec_loss,
-                kl_loss,
-                self.model.alpha,
-                self.config["lr"],
+                epoch_id, rec_loss, kl_loss, self.model.alpha, self.config["lr"],
             )
         )
         self.writer.add_scalars(

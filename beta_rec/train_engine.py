@@ -156,6 +156,8 @@ class TrainEngine(object):
 
         """
         self.dataset = data_util.Dataset(self.config)
+        self.config["item_fea"] = self.dataset.item_feature
+        self.config["user_fea"] = self.dataset.user_feature
         self.config["n_users"] = self.dataset.n_users
         self.config["n_items"] = self.dataset.n_items
 
