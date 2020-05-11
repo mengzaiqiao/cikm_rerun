@@ -286,7 +286,7 @@ if __name__ == "__main__":
         "REMARKS": [model_save_dir],
     }
 
-    for i in range(10):
+    for i in range(1):
         result = data.evaluate(data.test[i], dvbcr.load_best_model(), t=0)
         print(result)
         result["time"] = [run_time]
@@ -301,7 +301,10 @@ if __name__ == "__main__":
                     total_result[column] = "-"
             total_result = total_result.append(result_df)
         else:
+            if not os.path.exists(os.path.dirname(result_file)):
+                os.mkdir(os.path.dirname(result_file))
             print("create new result_file:", result_file)
+            
             total_result = result_df
 
         total_result.to_csv(result_file, index=False)
