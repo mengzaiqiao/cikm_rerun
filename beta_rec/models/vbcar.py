@@ -49,7 +49,6 @@ class VBCAR(nn.Module):
         x = self.act(self.fc_u_1_mu(x))
         mu = self.fc_u_2_mu(x)
         std = self.fc_u_2_std(x)
-        std = torch.sigmoid(std)
         return mu, std
 
     def item_encode(self, index):
