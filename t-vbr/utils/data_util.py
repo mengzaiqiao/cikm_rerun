@@ -13,32 +13,50 @@ pd.options.mode.chained_assignment = None
 from utils.unigramTable import UnigramTable
 from utils.evaluation import map_at_k, ndcg_at_k, precision_at_k, recall_at_k
 
-# current abs path
-par_abs_dir = os.path.abspath(os.path.join(os.path.abspath("."), os.pardir))
 
-if not os.path.exists(os.path.join(par_abs_dir, "datasets")):
-    par_abs_dir = os.path.abspath(os.path.join(par_abs_dir, os.pardir))
-if not os.path.exists(os.path.join(par_abs_dir, "datasets")):
-    par_abs_dir = os.path.abspath(os.path.join(par_abs_dir, os.pardir))
-if not os.path.exists(os.path.join(par_abs_dir, "datasets")):
-    par_abs_dir = os.path.abspath(os.path.join(par_abs_dir, os.pardir))
+data_base_dir = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../", "../", "datasets/")
+)
 
-print(par_abs_dir)
-data_base_dir = "/users/tr.zaiqm/mycode/cikm_rerun/datasets/"
+print("-" * 80)
+print("data_base_dir", data_base_dir)
+
+
 
 # dataset dir under temporal split
-instacart_dir = os.path.join(
-    "/users/tr.zaiqm/mycode/cikm_rerun/datasets/instacart/processed/temporal_basket/global_test_rate_20_n_neg_100/"
+instacart_dir = os.path.abspath(
+    os.path.join(
+        data_base_dir,
+        "./instacart/processed/temporal_basket/global_test_rate_20_n_neg_100/",
+    )
 )
-instacart_25_dir = os.path.join(
-    "/users/tr.zaiqm/mycode/cikm_rerun/datasets/instacart_25/processed/temporal_basket/global_test_rate_20_n_neg_100/"
+print("instacart_dir", instacart_dir)
+
+instacart_25_dir = os.path.abspath(
+    os.path.join(
+        data_base_dir,
+        "./instacart_25/processed/temporal_basket/global_test_rate_20_n_neg_100/",
+    )
 )
-tafeng_dir = os.path.join(
-    "/users/tr.zaiqm/mycode/cikm_rerun/datasets/tafeng/processed/temporal_basket/global_test_rate_20_n_neg_100/"
+print("instacart_25_dir", instacart_25_dir)
+
+tafeng_dir = os.path.abspath(
+    os.path.join(
+        data_base_dir,
+        "./tafeng/processed/temporal_basket/global_test_rate_20_n_neg_100/",
+    )
 )
-dunnhumby_dir = os.path.join(
-    "/users/tr.zaiqm/mycode/cikm_rerun/datasets/dunnhumby/processed/temporal_basket/global_test_rate_20_n_neg_100/"
+print("tafeng_dir", tafeng_dir)
+
+dunnhumby_dir = os.path.abspath(
+    os.path.join(
+        data_base_dir,
+        "./dunnhumby/processed/temporal_basket/global_test_rate_20_n_neg_100/",
+    )
 )
+print("dunnhumby_dir", dunnhumby_dir)
+
+print("-" * 80)
 
 # indicators of the colunmn name
 DEFAULT_USER_COL = "user_ids"
