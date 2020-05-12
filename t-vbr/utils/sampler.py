@@ -51,9 +51,12 @@ class Sampler(object):
             triple_df.to_csv(triple_file, index=False)
         return triple_df
 
-    def sample_by_time(self, time_step):
+    def sample_by_time(self, time_step, load_save=True):
+        triple_file = self.sample_file + "_" + str(time_step) + ".csv"
         if time_step == 0:
             return self.sample()
+        if os.path.exists(triple_file) and load_save:
+            return pd.read_csv(triple_file)
         print("preparing training triples ... ")
         self.dataTrain = (
             self.df_train.groupby(["order_ids", "user_ids"])["item_ids"]
@@ -99,7 +102,6 @@ class Sampler(object):
         data_dic["T"] = res[:, 3]
         triple_df = pd.DataFrame(data_dic)
         if self.dump:
-            triple_file = self.sample_file + "_" + str(time_step) + ".csv"
             triple_df.to_csv(triple_file, index=False)
         return triple_df
 

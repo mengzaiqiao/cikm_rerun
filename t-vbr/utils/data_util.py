@@ -454,12 +454,12 @@ class Dataset(object):
         """
         print("init user featrue for dataset:", data_str, " type:", fea_type)
         if fea_type == "random":
-            self.user_feature = self.get_random_rep(self.n_users, 512)
+            self.user_feature = self.get_random_rep(self.n_users, 100)
         else:
             print(
                 "[ERROR]: CANNOT support other feature type, use 'random' user featrue instead!"
             )
-            self.user_feature = self.get_random_rep(self.n_users, 512)
+            self.user_feature = self.get_random_rep(self.n_users, 100)
 
     def evaluate_all(self, data_list, model, k=0, t=0):
         """ 

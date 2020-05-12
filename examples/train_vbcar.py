@@ -55,6 +55,9 @@ def parse_args():
     parser.add_argument(
         "--device", nargs="?", type=str, help="device."
     )
+    parser.add_argument(
+        "--item_fea_type", nargs="?", type=str, help="device."
+    )
     parser.add_argument("--sub_set", nargs="?", type=int, help="Subset of dataset.")
     parser.add_argument(
         "--temp_train",

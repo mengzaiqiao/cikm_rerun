@@ -40,19 +40,19 @@ def load_item_fea_dic(config, fea_type):
 
     if fea_type == "word2vec":
         item_feature_file = open(
-            root_dir + "datasets/" + data_str + "/raw/item_feature_w2v.csv", "r"
+            root_dir + "/datasets/" + data_str + "/raw/item_feature_w2v.csv", "r"
         )
     elif fea_type == "cate":
         item_feature_file = open(
-            root_dir + "datasets/" + data_str + "/raw/item_feature_cate.csv", "r"
+            root_dir + "/datasets/" + data_str + "/raw/item_feature_cate.csv", "r"
         )
     elif fea_type == "one_hot":
         item_feature_file = open(
-            root_dir + "datasets/" + data_str + "/raw/item_feature_one.csv", "r"
+            root_dir + "/datasets/" + data_str + "/raw/item_feature_one.csv", "r"
         )
     elif fea_type == "bert":
         item_feature_file = open(
-            root_dir + "datasets/" + data_str + "/raw/item_feature_bert.csv", "r"
+            root_dir + "/datasets/" + data_str + "/raw/item_feature_bert.csv", "r"
         )
     else:
         print(

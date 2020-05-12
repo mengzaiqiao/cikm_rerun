@@ -56,7 +56,7 @@ def parse_args():
         "--INIT_LR", nargs="?", type=float, default=0.0025, help="INIT_LR"
     )
     parser.add_argument(
-        "--BATCH_SIZE", nargs="?", type=int, default=128, help="BATCH_SIZE"
+        "--BATCH_SIZE", nargs="?", type=int, default=500, help="BATCH_SIZE"
     )
     parser.add_argument(
         "--TIME_STEP", nargs="?", type=int, default=10, help="TIME_STEP"
@@ -177,6 +177,7 @@ if __name__ == "__main__":
         gpu_id = DEVICE_ID_LIST[0]
         os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
         device_str = "cuda:" + str(DEVICE_ID_LIST[0])
+    print("get divece: " + device_str)
 
     """
     file paths to be saved
@@ -304,7 +305,7 @@ if __name__ == "__main__":
             if not os.path.exists(os.path.dirname(result_file)):
                 os.mkdir(os.path.dirname(result_file))
             print("create new result_file:", result_file)
-            
+
             total_result = result_df
 
         total_result.to_csv(result_file, index=False)
