@@ -64,17 +64,14 @@ class TVBR(nn.Module):
             self.n_users, self.emb_dim, _weight=torch.zeros(self.n_users, self.emb_dim)
         )
 
-        # self.user_mean.weight.data.uniform_(-init_range, init_range)
-        # self.user_std.weight.data.uniform_(-init_range, init_range)
-
         self.item_mean = nn.Embedding(
             self.n_items, self.emb_dim, _weight=torch.ones(self.n_items, self.emb_dim)
         )
         self.item_std = nn.Embedding(
             self.n_items, self.emb_dim, _weight=torch.zeros(self.n_items, self.emb_dim)
         )
-
-        # self.item_mean.weight.data.uniform_(-init_range, init_range)
+        init_range = 0.5 / self.item_mean.embedding_dim
+        self.item_mean.weight.data.uniform_(-init_range, init_range)
         # self.item_std.weight.data.uniform_(-init_range, init_range)
 
         self.time2mean_u = nn.Sequential(
@@ -153,7 +150,8 @@ class TVBR(nn.Module):
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
-        return mu + eps * std
+        # return mu + eps * std
+        return mu
 
     def DKL(self, dis1, dis2, neg=False):
         mean1, std1 = dis1
