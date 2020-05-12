@@ -149,13 +149,13 @@ if __name__ == "__main__":
     log_file = log_dir + model_str
 
     if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+        os.makedirs(output_dir)
     if not os.path.exists(sample_dir):
-        os.mkdir(sample_dir)
+        os.makedirs(sample_dir)
     if not os.path.exists(embedding_dir):
-        os.mkdir(embedding_dir)
+        os.makedirs(embedding_dir)
     if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
+        os.makedirs(log_dir)
 
     """
     Logging
