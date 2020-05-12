@@ -52,7 +52,6 @@ class VAE_D(nn.Module):
         self.init_layers()
 
     def init_layers(self):
-        # intial priors
         self.time_embdding = nn.Embedding(
             self.time_step + 1,
             self.time_step + 1,
@@ -100,16 +99,14 @@ class VAE_D(nn.Module):
 
     def user_encode(self, index, time_laten, pri_time_laten):
         user_mean = self.user_mean(index).squeeze(1)  # (batch, out_size)
-        #         print(user_mean)
         user_mean_pri = self.time2mean_u(
             torch.cat([user_mean, pri_time_laten, self.user_fea[index]], 1)
         )
         user_mean = self.time2mean_u(
             torch.cat([user_mean, time_laten, self.user_fea[index]], 1)
         )
-        #         print(user_mean)
 
-        user_std = self.user_std(index).squeeze(1)  # (batch, out_size)
+        user_std = self.user_std(index).squeeze(1)
         user_std_pri = (
             self.time2std_u(
                 torch.cat([user_std, pri_time_laten, self.user_fea[index]], 1)
@@ -258,105 +255,36 @@ class VAE_D(nn.Module):
         input_emb_u = pos_i_1_emb + pos_i_2_emb
 
         u_pos_score = torch.mul(pos_u_emb, input_emb_u).squeeze()
-        u_pos_score = torch.sum(u_pos_score, dim=1)  # + pos_u_bias.squeeze()
+        u_pos_score = torch.sum(u_pos_score, dim=1)
         u_pos_score = F.logsigmoid(u_pos_score)
 
-        u_neg_score = torch.bmm(
-            neg_u_emb, pos_u_emb.unsqueeze(2)
-        ).squeeze()  # +neg_u_bias.squeeze()
+        u_neg_score = torch.bmm(neg_u_emb, pos_u_emb.unsqueeze(2)).squeeze()
         u_neg_score = F.logsigmoid(-1 * u_neg_score)
         u_score = -1 * (torch.sum(u_pos_score) + torch.sum(u_neg_score))
 
         input_emb_i_1 = pos_u_emb + pos_i_2_emb
         i_1_pos_score = torch.mul(pos_i_1_emb, input_emb_i_1).squeeze()
-        i_1_pos_score = torch.sum(i_1_pos_score, dim=1)  # + pos_i_1_bias.squeeze()
+        i_1_pos_score = torch.sum(i_1_pos_score, dim=1)
         i_1_pos_score = F.logsigmoid(i_1_pos_score)
-        i_1_neg_score = torch.bmm(
-            neg_i_1_emb, pos_i_1_emb.unsqueeze(2)
-        ).squeeze()  # +neg_i_1_bias.squeeze()
+        i_1_neg_score = torch.bmm(neg_i_1_emb, pos_i_1_emb.unsqueeze(2)).squeeze()
         i_1_neg_score = F.logsigmoid(-1 * i_1_neg_score)
         i_1_score = -1 * (torch.sum(i_1_pos_score) + torch.sum(i_1_neg_score))
 
         input_emb_i_2 = pos_u_emb + pos_i_1_emb
         i_2_pos_score = torch.mul(pos_i_2_emb, input_emb_i_2).squeeze()
-        i_2_pos_score = torch.sum(i_2_pos_score, dim=1)  # + pos_i_2_bias.squeeze()
+        i_2_pos_score = torch.sum(i_2_pos_score, dim=1)
         i_2_pos_score = F.logsigmoid(i_2_pos_score)
 
-        i_2_neg_score = torch.bmm(
-            neg_i_2_emb, pos_i_2_emb.unsqueeze(2)
-        ).squeeze()  # +neg_i_2_bias.squeeze()
-        #         print(neg_i_2_emb)
-        #         print(pos_i_2_emb)
-        #         print('-'*20)
+        i_2_neg_score = torch.bmm(neg_i_2_emb, pos_i_2_emb.unsqueeze(2)).squeeze()
         i_2_neg_score = F.logsigmoid(-1 * i_2_neg_score)
         i_2_score = -1 * (torch.sum(i_2_pos_score) + torch.sum(i_2_neg_score))
 
         self.reconstruct = (u_score + i_1_score + i_2_score) / (self.batch_size)
-        self.kl_loss = (
-            -0.5
-            * (pos_u_kl + pos_i_1_kl + pos_i_2_kl + neg_u_kl + neg_i_1_kl + neg_i_2_kl)
+        self.kl_loss = -0.5 * (
+            pos_u_kl + pos_i_1_kl + pos_i_2_kl + neg_u_kl + neg_i_1_kl + neg_i_2_kl
         )
 
         return (1 - self.alpha) * self.reconstruct + (self.alpha * self.kl_loss)
-
-    #     def save_embedding(self, file_path, id2user, id2item):
-
-    #         print('save embeddings to file:',file_path)
-    #         with torch.no_grad():
-    #             users = torch.tensor(
-    #                 np.arange(self.n_users), dtype=torch.int64, device=self.device
-    #             )
-
-    #             items = torch.tensor(
-    #                 np.arange(self.n_items), dtype=torch.int64, device=self.device
-    #             )
-
-    #             times_users = torch.tensor(
-    #                 [self.time_step]*self.n_users, dtype=torch.int64, device=self.device
-    #             )
-
-    #             times_items = torch.tensor(
-    #                 [self.time_step]*self.n_items, dtype=torch.int64, device=self.device
-    #             )
-    #             '''
-    #             time embedding
-    #             '''
-    #             time_laten_users = self.time_embdding(times_users).squeeze(1)
-    #             pri_time_laten_users =self.time_embdding(times_users-1)
-
-    #             time_laten_items = self.time_embdding(times_items).squeeze(1)
-    #             pri_time_laten_items =self.time_embdding(times_items-1)
-
-    #             '''
-    #             positive user embeddings
-    #             '''
-    #             pos_u_dis_pri, pos_u_dis = self.user_encode(users, time_laten_users, pri_time_laten_users)
-
-    #             '''
-    #             positive item embeddings
-    #             '''
-    #             pos_i_dis_pri, pos_i_dis = self.item_encode(items, time_laten_items, pri_time_laten_items)
-
-    #             if self.device.type == "cuda":
-    #                 self.u_embedding = pos_u_dis[0].view(len(users),self.emb_dim).cpu().detach().numpy()
-    #                 self.i_embedding = pos_i_dis[0].view(len(items),self.emb_dim).cpu().detach().numpy()
-    #             else:
-    #                 self.u_embedding = pos_u_dis[0].view(len(users),self.emb_dim).detach().numpy()
-    #                 self.i_embedding = pos_i_dis[0].view(len(items),self.emb_dim).detach().numpy()
-
-    #             fout = open(file_path + "_user.emb", "w")
-    #             fout.write("%d %d\n" % (len(id2user), self.emb_dim))
-    #             for wid, w in id2user.items():
-    #                 e = self.u_embedding[wid]
-    #                 e = " ".join(map(lambda x: str(x), e))
-    #                 fout.write("%s %s\n" % (w, e))
-
-    #             fout2 = open(file_path + "_item.emb", "w")
-    #             fout2.write("%d %d\n" % (len(id2item), self.emb_dim))
-    #             for wid, w in id2item.items():
-    #                 e = self.i_embedding[wid]
-    #                 e = " ".join(map(lambda x: str(x), e))
-    #                 fout2.write("%s %s\n" % (w, e))
 
     def predict(self, users, items, t=0):
         with torch.no_grad():

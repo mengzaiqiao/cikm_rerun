@@ -7,7 +7,7 @@ from beta_rec.utils.constants import DEFAULT_ORDER_COL, DEFAULT_USER_COL, DEFAUL
 
 
 class Sampler(object):
-    def __init__(self, df_train, sample_file, n_sample, dump=True, load_save=False):
+    def __init__(self, df_train, sample_file, n_sample, dump=True, load_save=True):
         self.sample_file = sample_file
         self.df_train = df_train
         self.n_sample = n_sample

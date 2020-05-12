@@ -147,7 +147,7 @@ class Dataset(object):
         self.n_items = 0
         self.sub_set = 0
         self.random_dim = 512
-        # subset of the dataset. use a small set of users and itesm if >0, otherwise use full dataset
+        # subset of the dataset. use a small set of users and items if >0, otherwise use full dataset
         if "sub_set" in config:
             self.sub_set = config["sub_set"]
         if "random_dim" in config:
@@ -168,6 +168,45 @@ class Dataset(object):
         self.init_item_fea()
         self.init_user_fea()
 
+    def sample_triple_time(self, dump=True, load_save=False):
+        """
+        Sample triples or load triples samples from files. Only applicable for basket based Recommender
+        Returns:
+            None
+
+        """
+        sample_file_name = (
+            "triple_"
+            + self.config["dataset"]
+            + (
+                ("_" + str(self.config["percent"] * 100))
+                if "percent" in self.config
+                else ""
+            )
+            + (
+                ("_" + str(self.config["time_step"]))
+                if "time_step" in self.config
+                else "_10"
+            )
+            + "_"
+            + str(self.config["n_sample"])
+            if "percent" in self.config
+            else "" + ".csv"
+        )
+        self.process_path = os.path.join(
+            self.config["root_dir"], self.config["process_dir"]
+        )
+        ensureDir(self.process_path)
+        sample_file = os.path.join(self.process_path, sample_file_name)
+        my_sampler = Sampler(
+            self.train,
+            sample_file,
+            self.config["n_sample"],
+            dump=dump,
+            load_save=load_save,
+        )
+        return my_sampler.sample_by_time(self.config["time_step"])
+
     def sample_triple(self, dump=True, load_save=False):
         """
         Sample triples or load triples samples from files. Only applicable for basket based Recommender
@@ -185,11 +224,6 @@ class Dataset(object):
             )
             + "_"
             + str(self.config["n_sample"])
-            + (
-                "_" + str(self.config["temp_train"])
-                if "temp_train" in self.config
-                else ""
-            )
             if "percent" in self.config
             else "" + ".csv"
         )
