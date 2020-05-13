@@ -33,7 +33,8 @@ class VBCAR(nn.Module):
     def init_layers(self):
         self.user_emb = nn.Embedding(self.n_users, self.emb_dim)
         self.item_emb = nn.Embedding(self.n_items, self.emb_dim)
-        init_range = 0.5 / self.emb_dim
+        # init_range = 0.5 / self.emb_dim
+        init_range = 0.01
         self.item_emb.weight.data.uniform_(-init_range, init_range)
         self.fc_u_1_mu = nn.Linear(self.user_fea_dim, self.late_dim)
         self.fc_u_2_mu = nn.Linear(self.late_dim, self.emb_dim * 2)

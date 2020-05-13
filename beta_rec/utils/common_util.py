@@ -172,7 +172,8 @@ def get_random_rep(raw_num, dim):
         ndarray or scalar
         Drawn samples from the normal distribution.
     """
-    initrange = 0.5 / dim
+    # initrange = 0.5 / dim
+    initrange = 0.01
     return np.random.uniform(low=-initrange, high=initrange, size=(raw_num, dim))
 
 

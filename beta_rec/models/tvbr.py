@@ -47,9 +47,10 @@ class TVBR(nn.Module):
     def init_layers(self):
         self.user_emb = nn.Embedding(self.n_users, self.emb_dim)
         self.item_emb = nn.Embedding(self.n_items, self.emb_dim)
-        init_range = 0.5 / self.emb_dim
+        # init_range = 0.5 / self.emb_dim
+        init_range = 0.01
+        self.user_emb.weight.data.uniform_(-init_range, init_range)
         self.item_emb.weight.data.uniform_(-init_range, init_range)
-
 
         self.time_embdding = nn.Embedding(
             self.time_step + 1,
@@ -70,9 +71,9 @@ class TVBR(nn.Module):
         self.item_std = nn.Embedding(
             self.n_items, self.emb_dim, _weight=torch.zeros(self.n_items, self.emb_dim)
         )
-        init_range = 0.5 / self.item_mean.embedding_dim
+
         self.item_mean.weight.data.uniform_(-init_range, init_range)
-        # self.item_std.weight.data.uniform_(-init_range, init_range)
+        self.item_std.weight.data.uniform_(-init_range, init_range)
 
         self.time2mean_u = nn.Sequential(
             nn.Linear(
