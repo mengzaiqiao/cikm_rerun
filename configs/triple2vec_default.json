@@ -12,7 +12,7 @@
     "n_sample_comment": "options are: 1000000, 2000000, 5000000, depending on the size of datasets",
     "metrics": ["ndcg_at_k", "precision_at_k", "recall_at_k", "map_at_k"],
     "validate_metric": "ndcg_at_k@10",
-    "emb_dim": 128,
+    "emb_dim": 64,
     "emb_dim_comment":"options are: 128,256,512",
     "n_neg": 5,
     "batch_size": 256,
