@@ -12,6 +12,7 @@ from beta_rec.utils.monitor import Monitor
 from beta_rec.utils.common_util import update_args
 from beta_rec.utils.constants import MAX_N_UPDATE
 from tqdm import tqdm
+from beta_rec.train_engine import get_device
 
 
 def parse_args():
@@ -92,6 +93,7 @@ class TVBR_train(TrainEngine):
         self.config["alpha_step"] = (1 - self.config["alpha"]) / (
             self.config["max_epoch"]
         )
+        self.gpu_id, self.config["device_str"] = get_device() if self.config["device"] == "gpu" else (None, "cpu")
         self.engine = TVBREngine(self.config)
 
     def train(self):
