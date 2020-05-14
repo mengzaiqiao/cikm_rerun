@@ -153,6 +153,8 @@ def test_eval_worker(testEngine, eval_data_df, prediction, k_li=[5, 10, 20]):
         result_para["item_fea_type"] = [testEngine.config["item_fea_type"]]
     if "n_sample" in testEngine.config:
         result_para["n_sample"] = [testEngine.config["n_sample"]]
+    if "time_step" in testEngine.config:
+        result_para["time_step"] = [testEngine.config["time_step"]]
 
     test_result_dic = evaluate(eval_data_df, prediction, testEngine.metrics, k_li)
     test_result_dic.update(result_para)
