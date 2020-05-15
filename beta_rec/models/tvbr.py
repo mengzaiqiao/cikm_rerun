@@ -47,8 +47,7 @@ class TVBR(nn.Module):
     def init_layers(self):
         self.user_emb = nn.Embedding(self.n_users, self.emb_dim)
         self.item_emb = nn.Embedding(self.n_items, self.emb_dim)
-        # init_range = 0.5 / self.emb_dim
-        init_range = 0.01
+        init_range = 0.1 * (self.emb_dim**(-1/2))
         self.user_emb.weight.data.uniform_(-init_range, init_range)
         self.item_emb.weight.data.uniform_(-init_range, init_range)
 

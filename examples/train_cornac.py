@@ -164,51 +164,51 @@ if __name__ == "__main__":
     # Load the built-in MovieLens 100K dataset (will be downloaded if not cached):
 
     # Here we are comparing Biased MF, PMF, and BPR:
-    pop = cornac.models.most_pop.recom_most_pop.MostPop(name="MostPop")
+#     pop = cornac.models.most_pop.recom_most_pop.MostPop(name="MostPop")
 
-    mf = cornac.models.MF(
-        k=10, max_iter=25, learning_rate=0.01, lambda_reg=0.02, use_bias=True, seed=123
-    )
-    pmf = cornac.models.PMF(
-        k=10, max_iter=100, learning_rate=0.001, lambda_reg=0.001, seed=123
-    )
-    bpr = cornac.models.BPR(
-        k=10, max_iter=200, learning_rate=0.001, lambda_reg=0.01, seed=123
-    )
+#     mf = cornac.models.MF(
+#         k=10, max_iter=25, learning_rate=0.01, lambda_reg=0.02, use_bias=True, seed=123
+#     )
+#     pmf = cornac.models.PMF(
+#         k=10, max_iter=100, learning_rate=0.001, lambda_reg=0.001, seed=123
+#     )
+#     bpr = cornac.models.BPR(
+#         k=10, max_iter=200, learning_rate=0.001, lambda_reg=0.01, seed=123
+#     )
 
-    vaecf = cornac.models.vaecf.recom_vaecf.VAECF(
-        name="SVAE",
-        k=10,
-        autoencoder_structure=[20],
-        act_fn="tanh",
-        likelihood="mult",
-        n_epochs=100,
-        batch_size=100,
-        learning_rate=0.001,
-        beta=1.0,
-        trainable=True,
-        verbose=False,
-        seed=None,
-        use_gpu=True,
-    )
+#     vaecf = cornac.models.vaecf.recom_vaecf.VAECF(
+#         name="SVAE",
+#         k=10,
+#         autoencoder_structure=[20],
+#         act_fn="tanh",
+#         likelihood="mult",
+#         n_epochs=100,
+#         batch_size=100,
+#         learning_rate=0.001,
+#         beta=1.0,
+#         trainable=True,
+#         verbose=False,
+#         seed=None,
+#         use_gpu=True,
+#     )
 
-    nmf = cornac.models.NMF(
-        k=15,
-        max_iter=50,
-        learning_rate=0.005,
-        lambda_u=0.06,
-        lambda_v=0.06,
-        lambda_bu=0.02,
-        lambda_bi=0.02,
-        use_bias=False,
-        verbose=True,
-        seed=123,
-    )
+#     nmf = cornac.models.NMF(
+#         k=15,
+#         max_iter=50,
+#         learning_rate=0.005,
+#         lambda_u=0.06,
+#         lambda_v=0.06,
+#         lambda_bu=0.02,
+#         lambda_bi=0.02,
+#         use_bias=False,
+#         verbose=True,
+#         seed=123,
+#     )
 
     neumf = cornac.models.ncf.recom_neumf.NeuMF(
         name="NCF",
         num_factors=8,
-        layers=(64, 32, 16, 8),
+        layers=(32, 16, 8),
         act_fn="relu",
         reg_mf=0.0,
         reg_layers=(0.0, 0.0, 0.0, 0.0),
@@ -223,7 +223,8 @@ if __name__ == "__main__":
         seed=None,
     )
 
-    models = [pop, mf, pmf, bpr, vaecf, nmf, neumf]
+#     models = [pop, mf, pmf, bpr, vaecf, nmf, neumf]
+    models = [neumf]
     # add our own eval
     data = data_util.Dataset(config)
     

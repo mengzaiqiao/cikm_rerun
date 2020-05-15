@@ -4,7 +4,7 @@ import numpy as np
 from threading import Thread
 from threading import Lock
 import beta_rec.utils.evaluation as eval_model
-from beta_rec.utils.constants import *
+from beta_rec.utils.constants import DEFAULT_USER_COL, DEFAULT_ITEM_COL, DEFAULT_PREDICTION_COL
 from beta_rec.utils.common_util import print_dict_as_table, save_to_csv, timeit
 from tensorboardX import SummaryWriter
 import socket
@@ -26,6 +26,7 @@ def detect_port(port, ip="127.0.0.1"):
                 connections.
         False -- otherwise.
     """
+    ready = True
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind((ip, port))
@@ -36,10 +37,10 @@ def detect_port(port, ip="127.0.0.1"):
         sock.listen(5)
         sock.close()
     except socket.error as e:
-        return False
-        if rais:
-            raise RuntimeError("The server is already running on port {0}".format(port))
-    return True
+        ready = False
+        raise RuntimeError("The server is already running on port {0}".format(port))
+    finally:
+        return ready
 
 
 def evaluate(data_df, predictions, metrics, k_li):
@@ -110,7 +111,9 @@ def train_eval_worker(
         print(
             f"Current testEngine.best_valid_performance {testEngine.best_valid_performance}"
         )
-        testEngine.best_valid_performance = valid_result[testEngine.config["validate_metric"]]
+        testEngine.best_valid_performance = valid_result[
+            testEngine.config["validate_metric"]
+        ]
         print_dict_as_table(
             valid_result,
             tag=f"performance on validation at epoch {epoch}",
@@ -145,6 +148,8 @@ def test_eval_worker(testEngine, eval_data_df, prediction, k_li=[5, 10, 20]):
     }
     if "late_dim" in testEngine.config:
         result_para["late_dim"] = [int(testEngine.config["late_dim"])]
+    if "remark" in testEngine.config:
+        result_para["remark"] = [testEngine.config["remark"]]
     if "alpha" in testEngine.config:
         result_para["alpha"] = [testEngine.config["alpha"]]
     if "activator" in testEngine.config:
@@ -157,6 +162,9 @@ def test_eval_worker(testEngine, eval_data_df, prediction, k_li=[5, 10, 20]):
         result_para["time_step"] = [testEngine.config["time_step"]]
 
     test_result_dic = evaluate(eval_data_df, prediction, testEngine.metrics, k_li)
+    print_dict_as_table(
+        test_result_dic, tag=f"performance on test", columns=["metrics", "values"],
+    )
     test_result_dic.update(result_para)
     lock_test_eval.acquire()  # need to be test
     result_df = pd.DataFrame(test_result_dic)
@@ -268,7 +276,6 @@ class EvalEngine(object):
 
         if type(test_df_list) is not list:  # compatible for testing a single test set
             test_df_list = [test_df_list]
-        test_df_list = [test_df_list[0]]
         for i, test_data_df in enumerate(test_df_list):
             test_pred = self.predict(test_data_df, model)
             worker = Thread(

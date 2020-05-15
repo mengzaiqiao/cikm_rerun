@@ -50,7 +50,7 @@ def parse_args():
         "--n_sample", nargs="?", type=int, help="Number of sampled triples."
     )
     parser.add_argument(
-        "--use_bias", nargs="?", type=int, help="",
+        "--remark", nargs="?", type=str, help="",
     )
     parser.add_argument(
         "--device", nargs="?", type=str, help="",
