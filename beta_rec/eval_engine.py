@@ -314,8 +314,8 @@ class EvalEngine(object):
             None
 
         """
-        if detect_port(8003):  # check if the port is available
-            start_http_server(8003)
+        #if detect_port(8003):  # check if the port is available
+        start_http_server(8003)
         gauges_test = {}
         gauges_valid = {}
         for metric in self.config["metrics"]:
