@@ -2,6 +2,7 @@
     "model": "ncf",
     "config_id": "default",
     "root_dir": "../",
+    "port": 8003,
     "dataset": "dunnhumby",
     "data_split":"temporal",
     "test_rate":0.2,

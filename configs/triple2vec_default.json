@@ -2,6 +2,7 @@
     "model": "Triple2vec",
     "config_id": "default",
     "root_dir": "../",
+    "port": 8003,
     "dataset": "tafeng",
     "dataset_comment": "options are: dunnhumby, tafeng, instacart, instacart_25",
     "data_split":"temporal_basket",
