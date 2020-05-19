@@ -22,7 +22,7 @@ class Triple2vec(nn.Module):
         self.init_emb()
 
     def init_emb(self):
-        initrange = 0.01
+        initrange = (self.emb_dim) ** (-1 / 2)
         self.user_emb.weight.data.uniform_(-initrange, initrange)
         self.item_emb1.weight.data.uniform_(-initrange, initrange)
         self.item_emb2.weight.data.uniform_(-initrange, initrange)
