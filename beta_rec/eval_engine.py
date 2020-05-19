@@ -45,7 +45,7 @@ def detect_port(port, ip="127.0.0.1"):
 
 
 def evaluate(data_df, predictions, metrics, k_li):
-    """ Evaluate the performance of a prection by different metrics
+    """ Evaluate the performance of a prediction by different metrics
 
     Args:
         data_df (DataFrame): the dataset to be evaluated
@@ -120,9 +120,14 @@ def train_eval_worker(
             tag=f"performance on validation at epoch {epoch}",
             columns=["metrics", "values"],
         )
+        print_dict_as_table(
+            test_result,
+            tag=f"performance on testing at epoch {epoch}",
+            columns=["metrics", "values"],
+        )
     else:
         testEngine.n_no_update += 1
-        print(f"number of epoches that have no update {testEngine.n_no_update}")
+        print(f"number of epochs that have no update {testEngine.n_no_update}")
 
     testEngine.n_worker -= 1
     lock_train_eval.release()
@@ -197,7 +202,12 @@ class EvalEngine(object):
         self.n_worker = 0
         self.n_no_update = 0
         self.best_valid_performance = 0
-        self.init_prometheus_env()
+        self.tunable = ["model", "dataset"]
+        self.labels = (
+            self.config["model"],
+            self.config["dataset"],
+        )
+        self.init_prometheus_client()
         print("Initializing test engine ...")
 
     def flush(self):
@@ -310,7 +320,10 @@ class EvalEngine(object):
             None
 
         """
-        port = self.config["port"]
+        if "port" not in self.config:
+            port = 8003
+        else:
+            port = self.config["port"]
         if detect_port(port):  # check if the port is available
             print(f"port {port} is available. start_http_server.")
             start_http_server(port)
