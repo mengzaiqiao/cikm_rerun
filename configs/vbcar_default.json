@@ -2,6 +2,7 @@
     "model": "VBCAR",
     "config_id":"default",
     "root_dir":"../",
+    "port": 8003,
     "dataset": "dunnhumby",
     "data_split":"temporal_basket",
     "data_split_comment":"options:temporal leave_one_out",
